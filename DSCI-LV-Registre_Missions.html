@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DS SEGUELA - Registre Missions LV</title>
+<style>
+  :root {
+    --primary: #1e3a8a;
+    --primary-light: #3b82f6;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --muted: #64748b;
+    --section: #eff6ff;
+    --calc: #fef9c3;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --warning: #f59e0b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+  }
+  header {
+    background: var(--primary);
+    color: white;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  header h1 { margin: 0; font-size: 18px; font-weight: 600; }
+  header .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .sync-status {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; padding: 4px 10px; border-radius: 12px;
+    background: rgba(255,255,255,0.15); color: white;
+  }
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+  .sync-dot.pending { background: var(--warning); animation: pulse 1.5s infinite; }
+  .sync-dot.offline { background: var(--danger); }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .lang-switch { display: flex; background: rgba(255,255,255,0.15); border-radius: 6px; overflow: hidden; }
+  .lang-switch button {
+    background: transparent; color: white; border: none; padding: 6px 12px;
+    cursor: pointer; font-size: 13px; font-weight: 500;
+  }
+  .lang-switch button.active { background: rgba(255,255,255,0.3); }
+  .icon-btn {
+    background: rgba(255,255,255,0.15); color: white; border: none;
+    width: 32px; height: 32px; border-radius: 6px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .icon-btn:hover { background: rgba(255,255,255,0.25); }
+  nav.tabs {
+    background: white;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    padding: 0 20px;
+    position: sticky;
+    top: 56px;
+    z-index: 99;
+  }
+  nav.tabs button {
+    background: transparent; border: none; padding: 12px 20px;
+    font-size: 14px; cursor: pointer; color: var(--muted);
+    border-bottom: 3px solid transparent;
+    font-weight: 500;
+  }
+  nav.tabs button.active { color: var(--primary); border-bottom-color: var(--primary); }
+  main { max-width: 1400px; margin: 0 auto; padding: 20px; }
+  .view { display: none; }
+  .view.active { display: block; }
+  .card {
+    background: var(--card);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .section-title {
+    background: var(--section);
+    padding: 10px 16px;
+    font-weight: 600;
+    color: var(--primary);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+    padding: 16px;
+  }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .field input, .field select, .field textarea {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 14px;
+    font-family: inherit;
+    background: white;
+    transition: border-color 0.15s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: none; border-color: var(--primary-light);
+    box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
+  }
+  .field input.calc, .field select.calc {
+    background: var(--calc);
+    font-weight: 600;
+    color: #713f12;
+  }
+  .field.wide { grid-column: 1 / -1; }
+  .field.wide textarea { resize: vertical; min-height: 60px; }
+  .btn {
+    border: none; border-radius: 6px; padding: 8px 16px;
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: var(--primary-light); }
+  .btn-success { background: var(--success); color: white; }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-secondary { background: white; color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--bg); }
+  .btn-block { width: 100%; justify-content: center; padding: 12px; font-size: 15px; }
+  .form-actions {
+    padding: 16px;
+    background: #f1f5f9;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .toolbar input.search {
+    flex: 1; min-width: 200px;
+    padding: 8px 12px; border: 1px solid var(--border);
+    border-radius: 6px; font-size: 14px;
+  }
+  .table-wrap {
+    background: white; border-radius: 8px; overflow: auto;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05); max-height: 70vh;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead { background: var(--primary); color: white; position: sticky; top: 0; }
+  th, td {
+    padding: 8px 10px; text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  th { font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; }
+  tbody tr:hover { background: #f8fafc; cursor: pointer; }
+  tbody tr.selected { background: #dbeafe; }
+  .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .kpi {
+    background: white; padding: 12px 16px; border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .kpi .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .kpi .value { font-size: 20px; font-weight: 700; color: var(--primary); margin-top: 4px; }
+  .toast {
+    position: fixed; bottom: 20px; right: 20px;
+    background: var(--success); color: white;
+    padding: 12px 20px; border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000; opacity: 0; transform: translateY(20px);
+    transition: all 0.3s; max-width: 320px;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.err { background: var(--danger); }
+
+  /* ---- Modal overlay ---- */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(15,23,42,0.6);
+    display: none; align-items: center; justify-content: center;
+    z-index: 2000; padding: 20px;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: white; border-radius: 12px; padding: 28px;
+    max-width: 480px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    max-height: 90vh; overflow: auto;
+  }
+  .modal h2 { margin: 0 0 6px 0; color: var(--primary); font-size: 20px; }
+  .modal p.sub { color: var(--muted); margin: 0 0 20px 0; font-size: 13px; }
+  .modal .field { margin-bottom: 14px; }
+  .modal .field label { font-weight: 600; color: var(--text); }
+  .modal .help { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .modal .actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .modal .actions button { flex: 1; min-width: 120px; }
+
+  @media (max-width: 640px) {
+    header h1 { font-size: 14px; }
+    .grid { grid-template-columns: 1fr; }
+    nav.tabs button { padding: 10px 12px; font-size: 13px; }
+    main { padding: 10px; }
+    .sync-status .lbl { display: none; }
+  }
+  @media print {
+    header, nav.tabs, .form-actions, .toolbar, .btn, .modal-bg { display: none !important; }
+    .card { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+    body { background: white; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 data-i18n="appTitle">DS SEGUELA — Registre Missions LV</h1>
+  <div class="controls">
+    <span class="sync-status" id="sync-status" title="">
+      <span class="sync-dot" id="sync-dot"></span>
+      <span class="lbl" id="sync-label">—</span>
+    </span>
+    <div class="lang-switch">
+      <button data-lang="fr" class="active">FR</button>
+      <button data-lang="en">EN</button>
+    </div>
+    <button class="icon-btn" onclick="openSetup()" title="Setup">&#9881;</button>
+    <button class="icon-btn" onclick="logout()" title="Logout" id="logout-btn" style="display:none">&#10162;</button>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button data-tab="saisie" class="active" data-i18n="tabEntry">Saisie</button>
+  <button data-tab="registre" data-i18n="tabRegister">Registre</button>
+</nav>
+
+<main>
+
+<!-- ============== SAISIE VIEW ============== -->
+<section id="view-saisie" class="view active">
+  <div class="card">
+    <div class="section-title" data-i18n="secIdent">IDENTIFICATION</div>
+    <div class="grid">
+      <div class="field"><label data-i18n="fNum">N° MISSION</label><input id="f_num" type="text"></div>
+      <div class="field"><label data-i18n="fDate">DATE</label><input id="f_date" type="date"></div>
+      <div class="field"><label data-i18n="fVeh">VEHICULE (LV)</label><select id="f_veh"></select></div>
+      <div class="field"><label data-i18n="fCond">CONDUCTEUR</label><input id="f_cond" type="text"></div>
+      <div class="field"><label data-i18n="fMat">MATRICULE / ID</label><input id="f_mat" type="text"></div>
+      <div class="field"><label data-i18n="fSect">SECTEUR</label><select id="f_sect"></select></div>
+      <div class="field"><label data-i18n="fSup">SUPERVISEUR</label><input id="f_sup" type="text"></div>
+      <div class="field"><label data-i18n="fSoc">SOCIETE</label><input id="f_soc" type="text"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title" data-i18n="secItin">ITINERAIRE & TEMPS</div>
+    <div class="grid">
+      <div class="field"><label data-i18n="fDep">LIEU DEPART</label><input id="f_dep" type="text"></div>
+      <div class="field"><label data-i18n="fDest">DESTINATION</label><input id="f_dest" type="text"></div>
+      <div class="field wide"><label data-i18n="fObj">OBJET MISSION</label><textarea id="f_obj" rows="2"></textarea></div>
+      <div class="field"><label data-i18n="fRoute">ROUTE / AXE</label><input id="f_route" type="text"></div>
+      <div class="field"><label data-i18n="fDepP">H. DEP. PREVU</label><input id="f_depp" type="time"></div>
+      <div class="field"><label data-i18n="fDepR">H. DEP. REEL</label><input id="f_depr" type="time"></div>
+      <div class="field"><label data-i18n="fArrP">H. ARR. PREVUE</label><input id="f_arrp" type="time"></div>
+      <div class="field"><label data-i18n="fArrR">H. ARR. REELLE</label><input id="f_arrr" type="time"></div>
+      <div class="field"><label data-i18n="fDur">DUREE REELLE (h)</label><input id="f_dur" type="text" readonly class="calc"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title" data-i18n="secKm">KILOMETRAGE & ECART</div>
+    <div class="grid">
+      <div class="field"><label data-i18n="fKmEst">KM ESTIME</label><input id="f_kmest" type="number" step="0.1"></div>
+      <div class="field"><label data-i18n="fCptD">COMPTEUR DEPART (km)</label><input id="f_cptd" type="number" step="0.1"></div>
+      <div class="field"><label data-i18n="fCptR">COMPTEUR RETOUR (km)</label><input id="f_cptr" type="number" step="0.1"></div>
+      <div class="field"><label data-i18n="fKmReel">KM REEL</label><input id="f_kmreel" type="text" readonly class="calc"></div>
+      <div class="field"><label data-i18n="fEcartKm">ECART KM (reel-est.)</label><input id="f_ecartkm" type="text" readonly class="calc"></div>
+      <div class="field"><label data-i18n="fEcartPct">ECART %</label><input id="f_ecartpct" type="text" readonly class="calc"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title" data-i18n="secFuel">CARBURANT</div>
+    <div class="grid">
+      <div class="field"><label data-i18n="fFuelD">FUEL DEPART (%)</label><input id="f_fueld" type="number" min="0" max="100"></div>
+      <div class="field"><label data-i18n="fFuelR">FUEL RETOUR (%)</label><input id="f_fuelr" type="number" min="0" max="100"></div>
+      <div class="field"><label data-i18n="fLSite">LITRES SITE / DEPOT (L)</label><input id="f_lsite" type="number" step="0.1"></div>
+      <div class="field"><label data-i18n="fR1L">RAVIT.1 - LIEU</label><input id="f_r1l" type="text"></div>
+      <div class="field"><label data-i18n="fR1V">RAVIT.1 - LITRES (L)</label><input id="f_r1v" type="number" step="0.1"></div>
+      <div class="field"><label data-i18n="fR2L">RAVIT.2 - LIEU</label><input id="f_r2l" type="text"></div>
+      <div class="field"><label data-i18n="fR2V">RAVIT.2 - LITRES (L)</label><input id="f_r2v" type="number" step="0.1"></div>
+      <div class="field"><label data-i18n="fR3L">RAVIT.3 - LIEU</label><input id="f_r3l" type="text"></div>
+      <div class="field"><label data-i18n="fR3V">RAVIT.3 - LITRES (L)</label><input id="f_r3v" type="number" step="0.1"></div>
+      <div class="field"><label data-i18n="fTotRoute">TOTAL LITRES ROUTE</label><input id="f_totroute" type="text" readonly class="calc"></div>
+      <div class="field"><label data-i18n="fCoutRoute">COUT TOTAL ROUTE (XOF)</label><input id="f_coutroute" type="number" step="1"></div>
+      <div class="field"><label data-i18n="fTotMiss">TOTAL LITRES MISSION</label><input id="f_totmiss" type="text" readonly class="calc"></div>
+      <div class="field"><label data-i18n="fConso">CONSOMM. L/100km</label><input id="f_conso" type="text" readonly class="calc"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title" data-i18n="secPax">PASSAGERS & CHARGEMENT</div>
+    <div class="grid">
+      <div class="field"><label data-i18n="fNbPax">NB PASSAGERS</label><input id="f_nbpax" type="number"></div>
+      <div class="field wide"><label data-i18n="fNoms">NOMS PASSAGERS</label><textarea id="f_noms" rows="2"></textarea></div>
+      <div class="field"><label data-i18n="fCharg">CHARGEMENT</label><input id="f_charg" type="text"></div>
+      <div class="field"><label data-i18n="fPoids">POIDS (kg)</label><input id="f_poids" type="number" step="0.1"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title" data-i18n="secPeage">PEAGES & FRAIS</div>
+    <div class="grid">
+      <div class="field wide"><label data-i18n="fDetP">DETAIL PEAGES</label><textarea id="f_detp" rows="2"></textarea></div>
+      <div class="field"><label data-i18n="fTotP">TOTAL PEAGES (XOF)</label><input id="f_totp" type="number" step="1"></div>
+      <div class="field"><label data-i18n="fRecP">RECUS PEAGES</label><select id="f_recp"></select></div>
+      <div class="field"><label data-i18n="fPaye">PAYE PAR</label><select id="f_paye"></select></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title" data-i18n="secHeb">HEBERGEMENT</div>
+    <div class="grid">
+      <div class="field"><label data-i18n="fNbN">NB NUITS</label><input id="f_nbn" type="number"></div>
+      <div class="field"><label data-i18n="fHotel">HOTEL / LIEU</label><input id="f_hotel" type="text"></div>
+      <div class="field"><label data-i18n="fCNuit">COUT/NUIT (XOF)</label><input id="f_cnuit" type="number" step="1"></div>
+      <div class="field"><label data-i18n="fTotHeb">TOTAL HEBERG. (XOF)</label><input id="f_totheb" type="text" readonly class="calc"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title" data-i18n="secMeal">REPAS</div>
+    <div class="grid">
+      <div class="field"><label data-i18n="fNbRep">NB REPAS TOTAL</label><input id="f_nbrep" type="number"></div>
+      <div class="field"><label data-i18n="fCRep">COUT MOY/REPAS (XOF)</label><input id="f_crep" type="number" step="1"></div>
+      <div class="field"><label data-i18n="fTotRep">TOTAL REPAS (XOF)</label><input id="f_totrep" type="text" readonly class="calc"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title" data-i18n="secExtra">DEPENSES EXTRA</div>
+    <div class="grid">
+      <div class="field"><label data-i18n="fE1D">EXTRA 1 - DESCRIPTION</label><input id="f_e1d" type="text"></div>
+      <div class="field"><label data-i18n="fE1C">EXTRA 1 - CATEGORIE</label><select id="f_e1c"></select></div>
+      <div class="field"><label data-i18n="fE1M">EXTRA 1 - MONTANT (XOF)</label><input id="f_e1m" type="number" step="1"></div>
+      <div class="field"><label data-i18n="fE2D">EXTRA 2 - DESCRIPTION</label><input id="f_e2d" type="text"></div>
+      <div class="field"><label data-i18n="fE2C">EXTRA 2 - CATEGORIE</label><select id="f_e2c"></select></div>
+      <div class="field"><label data-i18n="fE2M">EXTRA 2 - MONTANT (XOF)</label><input id="f_e2m" type="number" step="1"></div>
+      <div class="field"><label data-i18n="fE3D">EXTRA 3 - DESCRIPTION</label><input id="f_e3d" type="text"></div>
+      <div class="field"><label data-i18n="fE3C">EXTRA 3 - CATEGORIE</label><select id="f_e3c"></select></div>
+      <div class="field"><label data-i18n="fE3M">EXTRA 3 - MONTANT (XOF)</label><input id="f_e3m" type="number" step="1"></div>
+      <div class="field"><label data-i18n="fTotExt">TOTAL EXTRAS (XOF)</label><input id="f_totext" type="text" readonly class="calc"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title" data-i18n="secInc">INCIDENTS</div>
+    <div class="grid">
+      <div class="field"><label data-i18n="fDev">DEVIATION / CHGT</label><select id="f_dev"></select></div>
+      <div class="field"><label data-i18n="fTInc">TYPE INCIDENT</label><select id="f_tinc"></select></div>
+      <div class="field wide"><label data-i18n="fDInc">DESC. INCIDENT</label><textarea id="f_dinc" rows="2"></textarea></div>
+      <div class="field"><label data-i18n="fRet">RETARD (min)</label><input id="f_ret" type="number"></div>
+      <div class="field"><label data-i18n="fCRet">CAUSE RETARD</label><input id="f_cret" type="text"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title" data-i18n="secVeh">ETAT VEHICULE</div>
+    <div class="grid">
+      <div class="field"><label data-i18n="fEtat">ETAT VEHICULE</label><select id="f_etat"></select></div>
+      <div class="field"><label data-i18n="fHuile">HUILE VERIF.</label><select id="f_huile"></select></div>
+      <div class="field wide"><label data-i18n="fProb">PROB. TECHNIQUES</label><textarea id="f_prob" rows="2"></textarea></div>
+      <div class="field wide"><label data-i18n="fObs">OBSERVATIONS</label><textarea id="f_obs" rows="2"></textarea></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title" data-i18n="secVal">VALIDATION & TOTAUX</div>
+    <div class="grid">
+      <div class="field"><label data-i18n="fStat">STATUT</label><select id="f_stat"></select></div>
+      <div class="field"><label data-i18n="fValP">VALIDE PAR</label><input id="f_valp" type="text"></div>
+      <div class="field"><label data-i18n="fCoutTot">COUT TOTAL MISSION (XOF)</label><input id="f_couttot" type="text" readonly class="calc"></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="clearForm()" data-i18n="btnClear">Vider</button>
+      <button class="btn btn-secondary" onclick="printForm()" data-i18n="btnPrint">Imprimer</button>
+      <button class="btn btn-primary" onclick="saveMission()" data-i18n="btnSave">Enregistrer</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============== REGISTRE VIEW ============== -->
+<section id="view-registre" class="view">
+  <div class="kpi-row" id="kpi-row"></div>
+  <div class="toolbar">
+    <input type="text" class="search" id="search" placeholder="Recherche..." oninput="renderTable()">
+    <button class="btn btn-secondary" onclick="syncPull()" data-i18n="btnRefresh">Actualiser</button>
+    <button class="btn btn-secondary" onclick="exportCSV()">CSV</button>
+    <button class="btn btn-secondary" onclick="exportJSON()">JSON</button>
+    <button class="btn btn-secondary" onclick="importJSON()" data-i18n="btnImport">Importer</button>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)">
+  </div>
+  <div class="table-wrap">
+    <table id="reg-table">
+      <thead><tr id="reg-head"></tr></thead>
+      <tbody id="reg-body"></tbody>
+    </table>
+  </div>
+</section>
+
+</main>
+
+<!-- ============== SETUP MODAL ============== -->
+<div class="modal-bg" id="setup-modal">
+  <div class="modal">
+    <h2 data-i18n="setupTitle">Configuration Cloud</h2>
+    <p class="sub" data-i18n="setupSub">Renseignez les paramètres Supabase. Voir GUIDE_SETUP_SUPABASE.md.</p>
+    <div class="field">
+      <label data-i18n="setupUrl">Supabase URL</label>
+      <input id="cfg-url" type="url" placeholder="https://xxxxx.supabase.co">
+      <div class="help" data-i18n="setupUrlHelp">Project Settings → API → Project URL</div>
+    </div>
+    <div class="field">
+      <label data-i18n="setupKey">Supabase anon key</label>
+      <input id="cfg-key" type="text" placeholder="eyJhbGciOi...">
+      <div class="help" data-i18n="setupKeyHelp">Project Settings → API → anon public</div>
+    </div>
+    <div class="field">
+      <label data-i18n="setupPwd">Mot de passe partagé</label>
+      <input id="cfg-pwd" type="password" placeholder="••••••••">
+      <div class="help" data-i18n="setupPwdHelp">À choisir et communiquer aux superviseurs.</div>
+    </div>
+    <div class="field">
+      <label data-i18n="setupUser">Votre nom (signature)</label>
+      <input id="cfg-user" type="text" placeholder="ex: F. Cerruti">
+    </div>
+    <div class="actions">
+      <button class="btn btn-secondary" onclick="closeSetup()" data-i18n="btnCancel">Annuler</button>
+      <button class="btn btn-primary" onclick="saveSetup()" data-i18n="btnSaveCfg">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== PASSWORD GATE ============== -->
+<div class="modal-bg" id="auth-modal">
+  <div class="modal">
+    <h2 data-i18n="authTitle">DS SEGUELA — Registre LV</h2>
+    <p class="sub" data-i18n="authSub">Entrez le mot de passe partagé pour accéder au registre.</p>
+    <div class="field" id="auth-name-field" style="display:none">
+      <label data-i18n="authName">Votre nom (apparaît sur les missions)</label>
+      <input id="auth-name" type="text" placeholder="ex: J. Diallo">
+    </div>
+    <div class="field">
+      <label data-i18n="authPwd">Mot de passe</label>
+      <input id="auth-pwd" type="password" autofocus onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn btn-primary btn-block" onclick="doLogin()" data-i18n="btnLogin">Entrer</button>
+    <p class="help" style="text-align:center;margin-top:14px"><a href="#" onclick="event.preventDefault();openSetup()" data-i18n="needSetup">Paramètres avancés →</a></p>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+// ============== I18N ==============
+const I18N = {
+  fr: {
+    appTitle: "DS SEGUELA — Registre Missions LV",
+    tabEntry: "Saisie", tabRegister: "Registre",
+    secIdent: "IDENTIFICATION", secItin: "ITINÉRAIRE & TEMPS",
+    secKm: "KILOMÉTRAGE & ÉCART", secFuel: "CARBURANT",
+    secPax: "PASSAGERS & CHARGEMENT", secPeage: "PÉAGES & FRAIS",
+    secHeb: "HÉBERGEMENT", secMeal: "REPAS",
+    secExtra: "DÉPENSES EXTRA", secInc: "INCIDENTS",
+    secVeh: "ÉTAT VÉHICULE", secVal: "VALIDATION & TOTAUX",
+    fNum: "N° MISSION", fDate: "DATE", fVeh: "VEHICULE (LV)",
+    fCond: "CONDUCTEUR", fMat: "MATRICULE / ID", fSect: "SECTEUR",
+    fSup: "SUPERVISEUR", fSoc: "SOCIETE",
+    fDep: "LIEU DEPART", fDest: "DESTINATION", fObj: "OBJET MISSION",
+    fRoute: "ROUTE / AXE", fDepP: "H. DEP. PREVU", fDepR: "H. DEP. REEL",
+    fArrP: "H. ARR. PREVUE", fArrR: "H. ARR. REELLE", fDur: "DUREE REELLE (h)",
+    fKmEst: "KM ESTIME", fCptD: "COMPTEUR DEPART (km)", fCptR: "COMPTEUR RETOUR (km)",
+    fKmReel: "KM REEL", fEcartKm: "ECART KM (reel-est.)", fEcartPct: "ECART %",
+    fFuelD: "FUEL DEPART (%)", fFuelR: "FUEL RETOUR (%)",
+    fLSite: "LITRES SITE / DEPOT (L)", fR1L: "RAVIT.1 - LIEU",
+    fR1V: "RAVIT.1 - LITRES (L)", fR2L: "RAVIT.2 - LIEU",
+    fR2V: "RAVIT.2 - LITRES (L)", fR3L: "RAVIT.3 - LIEU",
+    fR3V: "RAVIT.3 - LITRES (L)", fTotRoute: "TOTAL LITRES ROUTE",
+    fCoutRoute: "COUT TOTAL ROUTE (XOF)", fTotMiss: "TOTAL LITRES MISSION",
+    fConso: "CONSOMM. L/100km",
+    fNbPax: "NB PASSAGERS", fNoms: "NOMS PASSAGERS",
+    fCharg: "CHARGEMENT", fPoids: "POIDS (kg)",
+    fDetP: "DETAIL PEAGES", fTotP: "TOTAL PEAGES (XOF)",
+    fRecP: "RECUS PEAGES", fPaye: "PAYE PAR",
+    fNbN: "NB NUITS", fHotel: "HOTEL / LIEU",
+    fCNuit: "COUT/NUIT (XOF)", fTotHeb: "TOTAL HEBERG. (XOF)",
+    fNbRep: "NB REPAS TOTAL", fCRep: "COUT MOY/REPAS (XOF)",
+    fTotRep: "TOTAL REPAS (XOF)",
+    fE1D: "EXTRA 1 - DESCRIPTION", fE1C: "EXTRA 1 - CATEGORIE",
+    fE1M: "EXTRA 1 - MONTANT (XOF)", fE2D: "EXTRA 2 - DESCRIPTION",
+    fE2C: "EXTRA 2 - CATEGORIE", fE2M: "EXTRA 2 - MONTANT (XOF)",
+    fE3D: "EXTRA 3 - DESCRIPTION", fE3C: "EXTRA 3 - CATEGORIE",
+    fE3M: "EXTRA 3 - MONTANT (XOF)", fTotExt: "TOTAL EXTRAS (XOF)",
+    fDev: "DEVIATION / CHGT", fTInc: "TYPE INCIDENT",
+    fDInc: "DESC. INCIDENT", fRet: "RETARD (min)", fCRet: "CAUSE RETARD",
+    fEtat: "ETAT VEHICULE", fHuile: "HUILE VERIF.",
+    fProb: "PROB. TECHNIQUES", fObs: "OBSERVATIONS",
+    fStat: "STATUT", fValP: "VALIDE PAR", fCoutTot: "COUT TOTAL MISSION (XOF)",
+    btnSave: "Enregistrer", btnClear: "Vider", btnPrint: "Imprimer",
+    btnImport: "Importer", btnRefresh: "Actualiser",
+    btnCancel: "Annuler", btnSaveCfg: "Enregistrer config", btnLogin: "Entrer",
+    setupTitle: "Configuration Cloud",
+    setupSub: "Renseignez les paramètres Supabase. Voir GUIDE_SETUP_SUPABASE.md.",
+    setupUrl: "Supabase URL", setupUrlHelp: "Project Settings → API → Project URL",
+    setupKey: "Clé anon Supabase", setupKeyHelp: "Project Settings → API → anon public",
+    setupPwd: "Mot de passe partagé", setupPwdHelp: "À choisir et communiquer aux superviseurs.",
+    setupUser: "Votre nom (signature)",
+    authTitle: "DS SEGUELA — Registre LV",
+    authSub: "Entrez le mot de passe partagé pour accéder au registre.",
+    authPwd: "Mot de passe",
+    authName: "Votre nom (apparaît sur les missions)",
+    needSetup: "Paramètres avancés →",
+    needName: "Veuillez saisir votre nom",
+    kpiMissions: "Missions", kpiKm: "KM total", kpiLitres: "Litres", kpiCout: "Coût total (XOF)",
+    searchPh: "Recherche...",
+    confirmDelete: "Supprimer cette mission ?",
+    saved: "Mission enregistrée",
+    cleared: "Formulaire vidé",
+    deleted: "Mission supprimée",
+    imported: "Missions importées",
+    pulled: "Données synchronisées",
+    needNum: "Le N° mission est obligatoire",
+    badPwd: "Mot de passe incorrect",
+    cfgSaved: "Configuration enregistrée",
+    cfgMissing: "Configuration incomplète",
+    syncOk: "Synchronisé", syncPending: "En attente", syncOffline: "Hors ligne", syncErr: "Erreur sync",
+    listVeh: ["","LV06","LV14","LV20","LV27","LV277","LV278","LV28","LV34","LV40","LV42","LV43","LV45","LV48","LV49","LV52"],
+    listSect: ["","Mining","Civil","General"],
+    listOui: ["","Oui","Non","Partiel"],
+    listOui2: ["","Oui","Non"],
+    listPaye: ["","Conducteur","Bureau","Superviseur","Autre"],
+    listCat: ["","Communication/Tel","Blanchisserie","Medical/Sante","Materiel","Transport local","Restauration","Autre"],
+    listInc: ["","Aucun","Mineur","Majeur","Accident"],
+    listEtat: ["","OK","Reparation","Immobilise"],
+    listStat: ["","Planifiee","En cours","Terminee","Annulee"]
+  },
+  en: {
+    appTitle: "DS SEGUELA — LV Missions Register",
+    tabEntry: "Entry", tabRegister: "Register",
+    secIdent: "IDENTIFICATION", secItin: "ROUTE & TIME",
+    secKm: "MILEAGE & VARIANCE", secFuel: "FUEL",
+    secPax: "PASSENGERS & LOAD", secPeage: "TOLLS & FEES",
+    secHeb: "ACCOMMODATION", secMeal: "MEALS",
+    secExtra: "EXTRA EXPENSES", secInc: "INCIDENTS",
+    secVeh: "VEHICLE STATUS", secVal: "VALIDATION & TOTALS",
+    fNum: "MISSION #", fDate: "DATE", fVeh: "VEHICLE (LV)",
+    fCond: "DRIVER", fMat: "ID / BADGE", fSect: "SECTOR",
+    fSup: "SUPERVISOR", fSoc: "COMPANY",
+    fDep: "DEPARTURE", fDest: "DESTINATION", fObj: "MISSION PURPOSE",
+    fRoute: "ROUTE / AXIS", fDepP: "DEP. PLANNED", fDepR: "DEP. ACTUAL",
+    fArrP: "ARR. PLANNED", fArrR: "ARR. ACTUAL", fDur: "ACTUAL DURATION (h)",
+    fKmEst: "EST. KM", fCptD: "ODO START (km)", fCptR: "ODO END (km)",
+    fKmReel: "ACTUAL KM", fEcartKm: "KM VARIANCE (act-est)", fEcartPct: "VARIANCE %",
+    fFuelD: "FUEL START (%)", fFuelR: "FUEL END (%)",
+    fLSite: "LITERS SITE/DEPOT (L)", fR1L: "REFUEL 1 - LOCATION",
+    fR1V: "REFUEL 1 - LITERS (L)", fR2L: "REFUEL 2 - LOCATION",
+    fR2V: "REFUEL 2 - LITERS (L)", fR3L: "REFUEL 3 - LOCATION",
+    fR3V: "REFUEL 3 - LITERS (L)", fTotRoute: "TOTAL LITERS ROAD",
+    fCoutRoute: "TOTAL ROAD COST (XOF)", fTotMiss: "TOTAL MISSION LITERS",
+    fConso: "CONSUMPTION L/100km",
+    fNbPax: "# PASSENGERS", fNoms: "PASSENGER NAMES",
+    fCharg: "CARGO", fPoids: "WEIGHT (kg)",
+    fDetP: "TOLL DETAIL", fTotP: "TOTAL TOLLS (XOF)",
+    fRecP: "TOLL RECEIPTS", fPaye: "PAID BY",
+    fNbN: "# NIGHTS", fHotel: "HOTEL / PLACE",
+    fCNuit: "COST/NIGHT (XOF)", fTotHeb: "TOTAL ACCOMMOD. (XOF)",
+    fNbRep: "# MEALS TOTAL", fCRep: "AVG COST/MEAL (XOF)",
+    fTotRep: "TOTAL MEALS (XOF)",
+    fE1D: "EXTRA 1 - DESCRIPTION", fE1C: "EXTRA 1 - CATEGORY",
+    fE1M: "EXTRA 1 - AMOUNT (XOF)", fE2D: "EXTRA 2 - DESCRIPTION",
+    fE2C: "EXTRA 2 - CATEGORY", fE2M: "EXTRA 2 - AMOUNT (XOF)",
+    fE3D: "EXTRA 3 - DESCRIPTION", fE3C: "EXTRA 3 - CATEGORY",
+    fE3M: "EXTRA 3 - AMOUNT (XOF)", fTotExt: "TOTAL EXTRAS (XOF)",
+    fDev: "DEVIATION / CHANGE", fTInc: "INCIDENT TYPE",
+    fDInc: "INCIDENT DESC.", fRet: "DELAY (min)", fCRet: "DELAY CAUSE",
+    fEtat: "VEHICLE STATUS", fHuile: "OIL CHECKED",
+    fProb: "TECH. PROBLEMS", fObs: "OBSERVATIONS",
+    fStat: "STATUS", fValP: "VALIDATED BY", fCoutTot: "TOTAL MISSION COST (XOF)",
+    btnSave: "Save", btnClear: "Clear", btnPrint: "Print",
+    btnImport: "Import", btnRefresh: "Refresh",
+    btnCancel: "Cancel", btnSaveCfg: "Save config", btnLogin: "Enter",
+    setupTitle: "Cloud Setup",
+    setupSub: "Enter Supabase parameters. See GUIDE_SETUP_SUPABASE.md.",
+    setupUrl: "Supabase URL", setupUrlHelp: "Project Settings → API → Project URL",
+    setupKey: "Supabase anon key", setupKeyHelp: "Project Settings → API → anon public",
+    setupPwd: "Shared password", setupPwdHelp: "Choose one and share with supervisors.",
+    setupUser: "Your name (signature)",
+    authTitle: "DS SEGUELA — LV Register",
+    authSub: "Enter the shared password to access the register.",
+    authPwd: "Password",
+    authName: "Your name (will appear on missions)",
+    needSetup: "Advanced settings →",
+    needName: "Please enter your name",
+    kpiMissions: "Missions", kpiKm: "Total KM", kpiLitres: "Liters", kpiCout: "Total cost (XOF)",
+    searchPh: "Search...",
+    confirmDelete: "Delete this mission?",
+    saved: "Mission saved",
+    cleared: "Form cleared",
+    deleted: "Mission deleted",
+    imported: "Missions imported",
+    pulled: "Data synced",
+    needNum: "Mission # is required",
+    badPwd: "Wrong password",
+    cfgSaved: "Configuration saved",
+    cfgMissing: "Incomplete configuration",
+    syncOk: "Synced", syncPending: "Pending", syncOffline: "Offline", syncErr: "Sync error",
+    listVeh: ["","LV06","LV14","LV20","LV27","LV277","LV278","LV28","LV34","LV40","LV42","LV43","LV45","LV48","LV49","LV52"],
+    listSect: ["","Mining","Civil","General"],
+    listOui: ["","Yes","No","Partial"],
+    listOui2: ["","Yes","No"],
+    listPaye: ["","Driver","Office","Supervisor","Other"],
+    listCat: ["","Communication/Phone","Laundry","Medical/Health","Material","Local transport","Catering","Other"],
+    listInc: ["","None","Minor","Major","Accident"],
+    listEtat: ["","OK","Repair","Out of service"],
+    listStat: ["","Planned","In progress","Completed","Cancelled"]
+  }
+};
+
+// ============== EMBED DEFAULTS (admin: edit before deploying) ==============
+const EMBED_URL = "https://otechxisupaiqhyitbsy.supabase.co";
+const EMBED_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im90ZWNoeGlzdXBhaXFoeWl0YnN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NTQxOTYsImV4cCI6MjA5NTUzMDE5Nn0.Vh7FgbCAHnv8NQACsRzFDQ9iRJXKAFawc49ufha0sm0";
+const EMBED_PWD_HASH = "049de428b351d5896dc5778240284271cb9f94a545eb403650ee5e62a110faa6";
+// ==========================================================================
+
+// ============== STATE ==============
+let lang = localStorage.getItem('lv_lang') || 'fr';
+let missions = JSON.parse(localStorage.getItem('lv_missions') || '[]');
+let pendingQueue = JSON.parse(localStorage.getItem('lv_pending') || '[]');
+let cfg = JSON.parse(localStorage.getItem('lv_cfg') || 'null');
+// If no local config, use embedded defaults (admin pre-baked them)
+if (!cfg && EMBED_URL && EMBED_KEY && EMBED_PWD_HASH) {
+  cfg = { url: EMBED_URL, key: EMBED_KEY, pwdHash: EMBED_PWD_HASH, user: '' };
+}
+let authed = sessionStorage.getItem('lv_authed') === '1';
+let editingId = null;
+let syncState = 'offline';
+
+const FIELD_IDS = ['num','date','veh','cond','mat','sect','sup','soc',
+  'dep','dest','obj','route','depp','depr','arrp','arrr','dur',
+  'kmest','cptd','cptr','kmreel','ecartkm','ecartpct',
+  'fueld','fuelr','lsite','r1l','r1v','r2l','r2v','r3l','r3v','totroute','coutroute','totmiss','conso',
+  'nbpax','noms','charg','poids',
+  'detp','totp','recp','paye',
+  'nbn','hotel','cnuit','totheb',
+  'nbrep','crep','totrep',
+  'e1d','e1c','e1m','e2d','e2c','e2m','e3d','e3c','e3m','totext',
+  'dev','tinc','dinc','ret','cret',
+  'etat','huile','prob','obs',
+  'stat','valp','couttot'];
+
+// Top-level columns in the Supabase table (everything else goes in jsonb 'data')
+const TOP_COLS = ['num','date','veh','cond','sect','stat','couttot','kmreel'];
+
+const SELECT_LISTS = {
+  veh: 'listVeh', sect: 'listSect', recp: 'listOui2', paye: 'listPaye',
+  e1c: 'listCat', e2c: 'listCat', e3c: 'listCat',
+  dev: 'listOui2', tinc: 'listInc',
+  etat: 'listEtat', huile: 'listOui',
+  stat: 'listStat'
+};
+
+// ============== UTIL ==============
+async function sha256(s) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+function toNumOrNull(v) {
+  if (v === '' || v == null) return null;
+  const n = parseFloat(v);
+  return isNaN(n) ? null : n;
+}
+function num(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function hhmm2h(s) {
+  if (!s) return null;
+  const [h,m] = s.split(':').map(Number);
+  return h + m/60;
+}
+
+// ============== I18N RENDER ==============
+function applyI18n() {
+  const t = I18N[lang];
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key]) el.textContent = t[key];
+  });
+  document.querySelectorAll('.lang-switch button').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-lang') === lang);
+  });
+  const sb = document.getElementById('search');
+  if (sb) sb.placeholder = t.searchPh;
+  Object.entries(SELECT_LISTS).forEach(([fid, listKey]) => {
+    const sel = document.getElementById('f_' + fid);
+    if (!sel) return;
+    const prev = sel.value;
+    sel.innerHTML = '';
+    t[listKey].forEach(opt => {
+      const o = document.createElement('option');
+      o.value = opt; o.textContent = opt;
+      sel.appendChild(o);
+    });
+    if (prev) sel.value = prev;
+  });
+  updateSyncStatus();
+  renderTable();
+}
+
+document.querySelectorAll('.lang-switch button').forEach(b => {
+  b.addEventListener('click', () => {
+    lang = b.getAttribute('data-lang');
+    localStorage.setItem('lv_lang', lang);
+    applyI18n();
+  });
+});
+
+// ============== TABS ==============
+document.querySelectorAll('nav.tabs button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('nav.tabs button').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById('view-' + b.getAttribute('data-tab')).classList.add('active');
+    if (b.getAttribute('data-tab') === 'registre') renderTable();
+  });
+});
+
+// ============== CALCULATIONS ==============
+function recalc() {
+  const dep = hhmm2h(document.getElementById('f_depr').value);
+  const arr = hhmm2h(document.getElementById('f_arrr').value);
+  let dur = '';
+  if (dep !== null && arr !== null) {
+    let d = arr - dep; if (d < 0) d += 24;
+    dur = d.toFixed(2);
+  }
+  document.getElementById('f_dur').value = dur;
+  const cd = num(document.getElementById('f_cptd').value);
+  const cr = num(document.getElementById('f_cptr').value);
+  const kmest = num(document.getElementById('f_kmest').value);
+  let kmreel = (document.getElementById('f_cptd').value && document.getElementById('f_cptr').value) ? (cr - cd) : '';
+  document.getElementById('f_kmreel').value = kmreel === '' ? '' : kmreel.toFixed(1);
+  let ecartkm = (kmreel !== '' && document.getElementById('f_kmest').value) ? (kmreel - kmest) : '';
+  document.getElementById('f_ecartkm').value = ecartkm === '' ? '' : ecartkm.toFixed(1);
+  let ecartpct = (ecartkm !== '' && kmest > 0) ? ((kmreel - kmest) / kmest * 100) : '';
+  document.getElementById('f_ecartpct').value = ecartpct === '' ? '' : ecartpct.toFixed(1) + '%';
+  const r1 = num(document.getElementById('f_r1v').value);
+  const r2 = num(document.getElementById('f_r2v').value);
+  const r3 = num(document.getElementById('f_r3v').value);
+  const lsite = num(document.getElementById('f_lsite').value);
+  const totroute = r1 + r2 + r3;
+  document.getElementById('f_totroute').value = totroute || '';
+  const totmiss = lsite + totroute;
+  document.getElementById('f_totmiss').value = totmiss || '';
+  const conso = (kmreel !== '' && kmreel > 0 && totmiss > 0) ? (totmiss / kmreel * 100).toFixed(2) : '';
+  document.getElementById('f_conso').value = conso;
+  const nbn = num(document.getElementById('f_nbn').value);
+  const cnuit = num(document.getElementById('f_cnuit').value);
+  document.getElementById('f_totheb').value = (nbn && cnuit) ? (nbn * cnuit) : '';
+  const nbrep = num(document.getElementById('f_nbrep').value);
+  const crep = num(document.getElementById('f_crep').value);
+  document.getElementById('f_totrep').value = (nbrep && crep) ? (nbrep * crep) : '';
+  const totext = num(document.getElementById('f_e1m').value) + num(document.getElementById('f_e2m').value) + num(document.getElementById('f_e3m').value);
+  document.getElementById('f_totext').value = totext || '';
+  const coutroute = num(document.getElementById('f_coutroute').value);
+  const totp = num(document.getElementById('f_totp').value);
+  const totheb = num(document.getElementById('f_totheb').value);
+  const totrep = num(document.getElementById('f_totrep').value);
+  document.getElementById('f_couttot').value = (coutroute + totp + totheb + totrep + totext) || '';
+}
+
+// ============== FORM ==============
+function getForm() {
+  const obj = {};
+  FIELD_IDS.forEach(id => { const el = document.getElementById('f_' + id); if (el) obj[id] = el.value; });
+  return obj;
+}
+function setForm(data) {
+  FIELD_IDS.forEach(id => { const el = document.getElementById('f_' + id); if (el) el.value = data[id] !== undefined && data[id] !== null ? data[id] : ''; });
+  recalc();
+}
+function clearForm() {
+  FIELD_IDS.forEach(id => { const el = document.getElementById('f_' + id); if (el) el.value = ''; });
+  editingId = null;
+  toast(I18N[lang].cleared);
+}
+async function saveMission() {
+  const data = getForm();
+  if (!data.num || !data.num.trim()) { toast(I18N[lang].needNum, true); return; }
+  data._ts = new Date().toISOString();
+  data._by = (cfg && cfg.user) || '';
+  const idx = missions.findIndex(m => m.num === data.num);
+  if (idx >= 0) missions[idx] = { ...missions[idx], ...data };
+  else missions.push(data);
+  persist();
+  toast(I18N[lang].saved);
+  renderTable();
+  await pushOne(data);
+}
+function persist() { localStorage.setItem('lv_missions', JSON.stringify(missions)); }
+function persistQueue() { localStorage.setItem('lv_pending', JSON.stringify(pendingQueue)); }
+
+// ============== SUPABASE REST ==============
+function sbHeaders() {
+  return {
+    'apikey': cfg.key,
+    'Authorization': 'Bearer ' + cfg.key,
+    'Content-Type': 'application/json',
+    'Prefer': 'resolution=merge-duplicates,return=representation'
+  };
+}
+function missionToRow(m) {
+  const row = {};
+  TOP_COLS.forEach(c => {
+    if (c === 'date') row.date = m.date || null;
+    else if (['couttot','kmreel'].includes(c)) row[c] = toNumOrNull(m[c]);
+    else row[c] = m[c] || null;
+  });
+  const data = {};
+  FIELD_IDS.forEach(f => { if (!TOP_COLS.includes(f) && m[f] !== undefined && m[f] !== '') data[f] = m[f]; });
+  row.data = data;
+  row.updated_by = m._by || (cfg && cfg.user) || null;
+  return row;
+}
+function rowToMission(row) {
+  const m = { ...(row.data || {}) };
+  TOP_COLS.forEach(c => { if (row[c] !== null && row[c] !== undefined) m[c] = row[c]; });
+  m._ts = row.updated_at;
+  m._by = row.updated_by;
+  return m;
+}
+async function pushOne(m) {
+  if (!cfg || !cfg.url || !cfg.key) return;
+  const row = missionToRow(m);
+  try {
+    setSync('pending');
+    const res = await fetch(cfg.url + '/rest/v1/missions?on_conflict=num', {
+      method: 'POST', headers: sbHeaders(), body: JSON.stringify(row)
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + (await res.text()).slice(0,120));
+    setSync('ok');
+  } catch (e) {
+    console.warn('Push failed:', e.message);
+    if (!pendingQueue.find(p => p.num === m.num)) pendingQueue.push(m);
+    persistQueue();
+    setSync(navigator.onLine ? 'err' : 'offline');
+  }
+}
+async function flushPending() {
+  if (!cfg || !pendingQueue.length || !navigator.onLine) return;
+  const queue = [...pendingQueue];
+  pendingQueue = [];
+  for (const m of queue) await pushOne(m);
+  persistQueue();
+}
+async function syncPull() {
+  if (!cfg || !cfg.url || !cfg.key) { toast(I18N[lang].cfgMissing, true); return; }
+  try {
+    setSync('pending');
+    const res = await fetch(cfg.url + '/rest/v1/missions?select=*&order=date.desc.nullslast', {
+      headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + cfg.key }
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    const remote = rows.map(rowToMission);
+    const map = new Map(missions.map(m => [m.num, m]));
+    remote.forEach(r => {
+      const local = map.get(r.num);
+      if (!local || (r._ts && (!local._ts || r._ts > local._ts))) map.set(r.num, r);
+    });
+    missions = Array.from(map.values());
+    persist();
+    setSync('ok');
+    toast(I18N[lang].pulled);
+    renderTable();
+  } catch (e) {
+    console.warn('Pull failed:', e.message);
+    setSync(navigator.onLine ? 'err' : 'offline');
+  }
+}
+function setSync(state) { syncState = state; updateSyncStatus(); }
+function updateSyncStatus() {
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  if (!dot || !lbl) return;
+  const t = I18N[lang];
+  const map = { ok: t.syncOk, pending: t.syncPending, offline: t.syncOffline, err: t.syncErr };
+  const cls = { ok: '', pending: 'pending', offline: 'offline', err: 'offline' };
+  if (!cfg) { lbl.textContent = '⚙'; dot.className = 'sync-dot offline'; return; }
+  lbl.textContent = map[syncState] || '';
+  dot.className = 'sync-dot ' + (cls[syncState] || '');
+  if (pendingQueue.length) lbl.textContent += ' (' + pendingQueue.length + ')';
+}
+window.addEventListener('online',  () => { setSync('pending'); flushPending(); });
+window.addEventListener('offline', () => setSync('offline'));
+
+// ============== REGISTRE ==============
+const REG_COLS = [
+  ['num','fNum'],['date','fDate'],['veh','fVeh'],['cond','fCond'],['sect','fSect'],
+  ['dep','fDep'],['dest','fDest'],['kmreel','fKmReel'],['conso','fConso'],
+  ['couttot','fCoutTot'],['stat','fStat']
+];
+function renderTable() {
+  const t = I18N[lang];
+  const head = document.getElementById('reg-head');
+  if (!head) return;
+  head.innerHTML = '';
+  REG_COLS.forEach(([k, lk]) => {
+    const th = document.createElement('th');
+    th.textContent = t[lk] || k;
+    head.appendChild(th);
+  });
+  const body = document.getElementById('reg-body');
+  body.innerHTML = '';
+  const sb = document.getElementById('search');
+  const q = sb ? (sb.value || '').toLowerCase() : '';
+  const filtered = missions.filter(m => {
+    if (!q) return true;
+    return Object.values(m).some(v => String(v).toLowerCase().includes(q));
+  });
+  filtered.forEach(m => {
+    const tr = document.createElement('tr');
+    REG_COLS.forEach(([k]) => {
+      const td = document.createElement('td');
+      td.textContent = m[k] != null ? m[k] : '';
+      tr.appendChild(td);
+    });
+    tr.addEventListener('click', () => loadMission(m.num));
+    body.appendChild(tr);
+  });
+  const kpiRow = document.getElementById('kpi-row');
+  const totKm = missions.reduce((s,m) => s + num(m.kmreel), 0);
+  const totL  = missions.reduce((s,m) => s + num(m.totmiss), 0);
+  const totC  = missions.reduce((s,m) => s + num(m.couttot), 0);
+  kpiRow.innerHTML =
+    '<div class="kpi"><div class="label">' + t.kpiMissions + '</div><div class="value">' + missions.length + '</div></div>' +
+    '<div class="kpi"><div class="label">' + t.kpiKm       + '</div><div class="value">' + totKm.toLocaleString() + '</div></div>' +
+    '<div class="kpi"><div class="label">' + t.kpiLitres   + '</div><div class="value">' + totL.toLocaleString()  + '</div></div>' +
+    '<div class="kpi"><div class="label">' + t.kpiCout     + '</div><div class="value">' + totC.toLocaleString()  + '</div></div>';
+}
+function loadMission(numId) {
+  const m = missions.find(x => x.num === numId);
+  if (!m) return;
+  setForm(m);
+  editingId = numId;
+  document.querySelector('nav.tabs button[data-tab="saisie"]').click();
+}
+
+// ============== EXPORT/IMPORT ==============
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(missions, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'missions_lv_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+}
+function exportCSV() {
+  if (!missions.length) return;
+  const keys = FIELD_IDS;
+  const escape = v => {
+    v = v == null ? '' : String(v);
+    if (/[",\n;]/.test(v)) return '"' + v.replace(/"/g,'""') + '"';
+    return v;
+  };
+  let csv = keys.join(';') + '\n';
+  missions.forEach(m => { csv += keys.map(k => escape(m[k])).join(';') + '\n'; });
+  const blob = new Blob(['﻿' + csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'missions_lv_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+function importJSON() { document.getElementById('import-file').click(); }
+async function handleImport(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const text = await file.text();
+  try {
+    const data = JSON.parse(text);
+    if (Array.isArray(data)) {
+      data.forEach(rec => {
+        const i = missions.findIndex(m => m.num === rec.num);
+        if (i >= 0) missions[i] = rec; else missions.push(rec);
+      });
+      persist();
+      toast(I18N[lang].imported);
+      renderTable();
+      for (const m of data) await pushOne(m);
+    }
+  } catch (err) { toast('Erreur: ' + err.message, true); }
+  ev.target.value = '';
+}
+function printForm() { window.print(); }
+
+// ============== TOAST ==============
+function toast(msg, err) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.toggle('err', !!err);
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ============== SETUP MODAL ==============
+function openSetup() {
+  if (cfg) {
+    document.getElementById('cfg-url').value  = cfg.url || '';
+    document.getElementById('cfg-key').value  = cfg.key || '';
+    document.getElementById('cfg-pwd').value  = '';
+    document.getElementById('cfg-user').value = cfg.user || '';
+  }
+  document.getElementById('setup-modal').classList.add('show');
+}
+function closeSetup() { document.getElementById('setup-modal').classList.remove('show'); }
+async function saveSetup() {
+  const url  = document.getElementById('cfg-url').value.trim();
+  const key  = document.getElementById('cfg-key').value.trim();
+  const pwd  = document.getElementById('cfg-pwd').value;
+  const user = document.getElementById('cfg-user').value.trim();
+  if (!url || !key) { toast(I18N[lang].cfgMissing, true); return; }
+  const newCfg = { url: url.replace(/\/$/, ''), key, user };
+  if (pwd) newCfg.pwdHash = await sha256(pwd);
+  else if (cfg && cfg.pwdHash) newCfg.pwdHash = cfg.pwdHash;
+  cfg = newCfg;
+  localStorage.setItem('lv_cfg', JSON.stringify(cfg));
+  toast(I18N[lang].cfgSaved);
+  closeSetup();
+  updateSyncStatus();
+  if (authed) syncPull();
+}
+
+// ============== AUTH GATE ==============
+async function doLogin() {
+  if (!cfg || !cfg.pwdHash) { toast(I18N[lang].cfgMissing, true); openSetup(); return; }
+  const pwd = document.getElementById('auth-pwd').value;
+  const h = await sha256(pwd);
+  if (h !== cfg.pwdHash) { toast(I18N[lang].badPwd, true); return; }
+  const nameField = document.getElementById('auth-name-field');
+  const nameInput = document.getElementById('auth-name');
+  if (nameField.style.display !== 'none') {
+    const nm = nameInput.value.trim();
+    if (!nm) { toast(I18N[lang].needName, true); nameInput.focus(); return; }
+    cfg.user = nm;
+  }
+  localStorage.setItem('lv_cfg', JSON.stringify(cfg));
+  sessionStorage.setItem('lv_authed', '1');
+  authed = true;
+  document.getElementById('auth-modal').classList.remove('show');
+  document.getElementById('logout-btn').style.display = '';
+  syncPull();
+}
+function logout() {
+  sessionStorage.removeItem('lv_authed');
+  authed = false;
+  document.getElementById('auth-modal').classList.add('show');
+  document.getElementById('logout-btn').style.display = 'none';
+}
+function showAuth() {
+  const nameField = document.getElementById('auth-name-field');
+  nameField.style.display = (cfg && cfg.user) ? 'none' : '';
+  document.getElementById('auth-modal').classList.add('show');
+  setTimeout(() => {
+    const focusEl = (cfg && cfg.user) ? document.getElementById('auth-pwd') : document.getElementById('auth-name');
+    if (focusEl) focusEl.focus();
+  }, 100);
+}
+
+// ============== INIT ==============
+applyI18n();
+FIELD_IDS.forEach(id => {
+  const el = document.getElementById('f_' + id);
+  if (el && !el.readOnly) el.addEventListener('input', recalc);
+});
+renderTable();
+
+
+if (!cfg) { openSetup(); }
+else if (!authed) { showAuth(); }
+else {
+  document.getElementById('logout-btn').style.display = '';
+  setSync(navigator.onLine ? 'ok' : 'offline');
+  syncPull();
+  flushPending();
+}
+</script>
+</body>
+</html>
